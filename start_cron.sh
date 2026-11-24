@@ -2,7 +2,7 @@
 
 # ============================================================
 # Start Cron Daemon Script
-# This ensures cron service starts when container boots
+# Ensures cron service starts when container boots
 # ============================================================
 
 echo "Starting Cloudflare DDNS cron daemon..."
