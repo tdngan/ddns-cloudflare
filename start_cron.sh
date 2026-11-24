@@ -1,41 +1,25 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
-# ============================================================
-# Start Cron Daemon Script
-# Ensures cron service starts when container boots
-# ============================================================
+# 1. Read the schedule from env (default every 5 minutes); strip stray quotes
+CRON_EXPR="${CRON_EXPR:-*/5 * * * *}"
+CRON_EXPR="$(echo "$CRON_EXPR" | sed -e "s/^['\"]//" -e "s/['\"]$//")"
 
-echo "Starting Cloudflare DDNS cron daemon..."
+# 2. Save container env vars so cron jobs can load them (cron starts with an empty env)
+declare -px > /app/container.env
+chmod 600 /app/container.env
 
-# Check if cron is running using ps command (more reliable than pgrep in minimal images)
-if ! ps aux | grep -v grep | grep -q "[c]ron"; then
-    echo "Cron daemon not running. Starting now..."
-    
-    # Start cron as a background process
-    /usr/sbin/cron -f &
-    CRON_PID=$!
-    
-    echo "Cron started with PID: $CRON_PID"
-else
-    echo "Cron daemon is already running."
-fi
+# 3. Create the crontab at runtime (Debian: /etc/cron.d, needs the user column, no dot in name)
+cat > /etc/cron.d/ddns <<EOF
+SHELL=/bin/bash
+${CRON_EXPR} root . /app/container.env; cd /app && /usr/local/bin/python scripts/ddns_cloudflare.py >> /proc/1/fd/1 2>&1
+EOF
+chmod 0644 /etc/cron.d/ddns
 
-# Wait for cron to be ready (up to 10 seconds)
-for i in {1..20}; do
-    if ps aux | grep -v grep | grep -q "[c]ron"; then
-        echo "Cron daemon started successfully!"
-        break
-    fi
-    
-    # Give it some time
-    sleep 0.3
-done
+echo "[start] Schedule: ${CRON_EXPR}"
 
-# Final check
-if ! ps aux | grep -v grep | grep -q "[c]ron"; then
-    echo "ERROR: Failed to start cron daemon after multiple attempts." >&2
-    exit 1
-fi
+# 4. Run once immediately so DNS is updated at startup
+/usr/local/bin/python scripts/ddns_cloudflare.py || true
 
-echo "Cron daemon is ready and running!"
-exec "$@"
+# 5. Run cron in the FOREGROUND as the main process, so the container stays alive
+exec cron -f
