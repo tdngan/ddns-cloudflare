@@ -1,16 +1,22 @@
 # ============================================================
 # Docker Compose: Cloudflare DDNS Auto Update (CRON LINH HOẠT!)
+# Sử dụng GHCR.io image - không cần Docker Hub!
 # ============================================================
 version: '3.8'
 
 services:
   ddns-cloudflare:
+    # Container name cho dễ quản lý (KHÔNG phải là image path)
     container_name: cloudflare-ddns
     
-    # Build context from current directory
-    build: .
+    # Pull image từ GitHub Container Registry
+    # Thay vì build, dùng pre-built image từ ghcr.io
+    image: ghcr.io/tdngan/ddns-cloudflare:latest
     
-    # Restart policy - auto-restart nếu cron daemon crash
+    # Nếu muốn build local thay vì pull từ registry:
+    # build: .
+    
+    # Restart policy - auto-restart nếu cron daemon crash hoặc container crash
     restart: unless-stopped
     
     # ============================================================
@@ -31,10 +37,10 @@ services:
       # Mount .env vào container (Read-only cho an toàn)
       - ./data/.env:/app/.env:ro
       
-      # Mount thư mục logs
+      # Mount thư mục logs (ghi log cron job vào đây)
       - ./data/logs:/app/logs
       
-      # Mount thư mục cache IP
+      # Mount thư mục cache IP (không mất khi restart container)
       - ./data/cache:/app/data
     
     # ============================================================
@@ -56,7 +62,7 @@ services:
         max-size: "5m"   # Giới hạn mỗi log file tối đa 5MB
         max-file: "3"    # Tối đa giữ 3 log files (15MB total)
 
-# Networks cho container kết nối với internet
+# Networks cho container kết nối với internet (pull/push API, Discord/Telegram notifications)
 networks:
   ddns-network:
     name: cloudflare-ddns-net
