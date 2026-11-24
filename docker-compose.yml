@@ -25,10 +25,17 @@ services:
     environment:
       # Timezone (Asia/Ho_Chi_Minh)
       - TZ=Asia/Ho_Chi_Minh
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - ZONE_ID=${ZONE_ID}
+      - DOMAIN=${DOMAIN}
+      - PROXIED=${PROXIED}
+      - SUBDOMAINS=${SUBDOMAINS}
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
       
       # CRON Expression - Mặc định mỗi 5 phút, có thể override
       # Ví dụ: */10 * * * *, 0 * * * *, 0 */2 * * *...
-      - CRON_EXPR=*/5 * * * *
+      - CRON_EXPR=${CRON_EXPR}
+      
 
     # ============================================================
     # VOLUME MOUNTS (Persistent data)
@@ -44,14 +51,8 @@ services:
       - ./data/cache:/app/data
     
     # ============================================================
-    # HEALTH CHECK
+    # HEALTH CHECK (đã có trong Dockerfile)
     # ============================================================
-    healthcheck:
-      test: ["CMD", "curl", "-f", "https://api.ipify.org"]
-      interval: 1m30s   # Kiểm tra mỗi 90 giây
-      timeout: 10s       # Timeout sau 10 giây
-      retries: 3         # Retry 3 lần nếu fail
-      start_period: 60s  # Chờ 60 giây trước khi check (container khởi động + cron daemon)
 
     # ============================================================
     # LOGGING CONFIGURATION
