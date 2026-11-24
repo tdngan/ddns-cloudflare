@@ -1,0 +1,75 @@
+# ============================================================
+# Docker Compose: Cloudflare DDNS Auto Update (CRON LINH HOẠT!)
+# ============================================================
+version: '3.8'
+
+services:
+  ddns-cloudflare:
+    container_name: cloudflare-ddns
+    
+    # Build context from current directory
+    build: .
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # ============================================================
+    # ENVIRONMENT VARIABLES
+    # ============================================================
+    environment:
+      # Timezone (Asia/Ho_Chi_Minh)
+      - TZ=Asia/Ho_Chi_Minh
+      
+      # CRON Expression - Có thể override từ compose file hoặc .env
+      # Mặc định: mỗi 5 phút, có thể sửa thành giá trị khác
+      # Ví dụ: */10 * * * *, 0 * * * *, 0 */2 * * *...
+      - CRON_EXPR=*/5 * * * *
+
+    # ============================================================
+    # VOLUME MOUNTS (Persistent data)
+    # ============================================================
+    volumes:
+      # Mount .env vào container (Read-only cho an toàn)
+      - ./data/.env:/app/.env:ro
+      
+      # Mount thư mục logs
+      - ./data/logs:/app/logs
+      
+      # Mount thư mục cache IP
+      - ./data/cache:/app/data
+    
+    # ============================================================
+    # HEALTH CHECK
+    # ============================================================
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://api.ipify.org"]
+      interval: 1m30s   # Kiểm tra mỗi 90 giây
+      timeout: 10s       # Timeout sau 10 giây
+      retries: 3         # Retry 3 lần nếu fail
+      start_period: 60s  # Chờ 60 giây trước khi check (container khởi động)
+
+    # ============================================================
+    # LOGGING CONFIGURATION
+    # ============================================================
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"   # Giới hạn mỗi log file tối đa 5MB
+        max-file: "3"    # Tối đa giữ 3 log files (15MB total)
+
+    # ============================================================
+    # RESOURCE LIMITS (Optional - Recommended for production)
+    # ============================================================
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'    # Giới hạn CPU tối đa 0.5 core
+          memory: 256M   # Giới hạn RAM tối đa 256MB
+        reservations:
+          cpus: '0.1'    # CPU reserved 0.1 core
+          memory: 64M    # RAM reserved 64MB
+
+networks:
+  ddns-network:
+    name: cloudflare-ddns-net
+    driver: bridge

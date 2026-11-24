@@ -1,0 +1,20 @@
+# ============================================================
+# .dockerignore: File không cần build vào Docker image
+# =============================================================
+
+# Git files (không cần trong container)
+.git/
+.gitignore
+
+# GitHub Actions workflow (chỉ dùng khi deploy, không build vào container)
+.github/workflows/**
+
+# Python cache
+__pycache__/
+*.pyc
+# IDE / Editor
+.vscode/
+.idea/
+# OS files
+.DS_Store
+Thumbs.db
