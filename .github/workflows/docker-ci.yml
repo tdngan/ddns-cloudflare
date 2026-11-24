@@ -35,7 +35,7 @@ jobs:
       
       - name: Build and push Docker image to ghcr.io
         # Image tags: latest + commit SHA for rollback capability
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           push: true
           context: .
