@@ -1,6 +1,6 @@
 # ============================================================
 # Dockerfile: Cloudflare DDNS Auto Update (CRON LINH HOẠT!)
-# Fixed version - solves /etc/crontabs directory issue!
+# Fixed version - ensures cron daemon starts correctly!
 # ============================================================
 FROM python:3.11-slim
 
@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     cron \
     tzdata \
+    procps \  # Install ps command for process checking in start_cron.sh
     && rm -rf /var/lib/apt/lists/* \
     && echo "Asia/Ho_Chi_Minh" > /etc/timezone \
     && ln -fs /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime
